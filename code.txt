@@ -1,0 +1,78 @@
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <Adafruit_Sensor.h>
+#include <DHT.h>
+Adafruit_SSD1306 display(128, 64, &Wire, -1);
+#define DHTPIN 4          // DHT11 Sensor Pin
+#define DHTTYPE    DHT11
+DHT dht(DHTPIN, DHTTYPE);
+int mq02_pin = 34;
+int mq02_value = 0;
+int led = 2;
+
+void setup()
+{
+  Serial.begin(115200);
+  dht.begin();
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
+  {
+    Serial.println(F("Display failed"));
+    for (;;);
+  }
+  delay(2000);
+  display.clearDisplay();
+  display.setTextColor(WHITE);
+  pinMode(mq02_pin, INPUT);
+  pinMode(led, OUTPUT);
+}
+void loop()
+{
+  delay(1000);
+  float t = dht.readTemperature();
+  float h = dht.readHumidity();
+  if (isnan(h) || isnan(t)) {
+    Serial.println("DHT Sensor");
+  }
+  mq02_value = analogRead(mq02_pin);
+
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setCursor(0, 10);
+  display.print("Temp: ");
+  display.setCursor(60, 10);
+  display.print(t);
+  display.print(" ");
+  display.setTextSize(2);
+  display.setCursor(0, 30);
+  display.print("Hum: ");
+  display.setCursor(60, 30);
+  display.print(h);
+  display.setTextSize(2);
+  display.setCursor(0, 50);
+  display.print("mq2: ");
+  display.setCursor(60, 50);
+  display.print(mq02_value);
+  display.display();
+
+
+  Serial.print("Temperature: ");
+  Serial.print(t);
+  Serial.print("  C");
+  Serial.print("    Humidity:  ");
+  Serial.print(h);
+  Serial.print("  %");
+  Serial.print("    mq2 value:  ");
+  Serial.print(mq02_value);
+  Serial.println();
+
+
+  if (mq02_value > 3000)
+  {
+    digitalWrite(led, HIGH);
+  }
+  else
+  {
+    digitalWrite(led, LOW);
+  }
+}
