@@ -1,0 +1,117 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, r2_score
+from sklearn.preprocessing import StandardScaler
+
+df = pd.read_csv("E:/4.1/Softcom Lab/ass2/city_day.csv/city_day.csv")
+df
+
+y = df['AQI']
+
+# Remove the target and bucket columns from the feature set
+X = df.drop(['AQI', 'AQI_Bucket'], axis=1)
+X
+
+y
+
+X.isnull().sum()
+
+pmean=X["PM2.5"].mean()
+X["PM2.5"].fillna(pmean,inplace=True)
+
+pmean=X["PM10"].mean()
+X["PM10"].fillna(pmean,inplace=True)
+
+pmean=X["NO"].mean()
+X["NO"].fillna(pmean,inplace=True)
+
+pmean=X["NO2"].mean()
+X["NO2"].fillna(pmean,inplace=True)
+
+noxmean=X["NOx"].mean()
+X["NOx"].fillna(noxmean,inplace=True)
+
+nhmean=X["NH3"].mean()
+X["NH3"].fillna(nhmean,inplace=True)
+
+cmean=X["CO"].mean()
+X["CO"].fillna(cmean,inplace=True)
+
+smean=X["SO2"].mean()
+X["SO2"].fillna(smean,inplace=True)
+
+omean=X["O3"].mean()
+X["O3"].fillna(omean,inplace=True)
+
+bmean=X["Benzene"].mean()
+X["Benzene"].fillna(bmean,inplace=True)
+
+tmean=X["Toluene"].mean()
+X["Toluene"].fillna(tmean,inplace=True)
+
+xmean=X["Xylene"].mean()
+X["Xylene"].fillna(xmean,inplace=True)
+
+X
+
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, r2_score
+
+# Suppose your original data is in X (DataFrame) and y (Series)
+features = ['PM2.5', 'PM10', 'NO2', 'NOx', 'NH3', 'CO', 'SO2', 'O3', 'Benzene', 'Toluene', 'Xylene']
+d = X[features]  # subset the feature columns
+
+# Combine features and target into one DataFrame to handle NaNs consistently
+df = pd.concat([d, y], axis=1)
+df.dropna(inplace=True)  # drop rows with ANY NaN (you can also choose to drop only if y is NaN)
+
+# Separate back into features and target
+X_clean = df[features]
+y_clean = df[y.name]  # or the correct target column name
+
+# Split the data (only once)
+X_train, X_test, y_train, y_test = train_test_split(X_clean, y_clean, test_size=0.3, random_state=42)
+
+# Create and train the model
+rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
+rf_model.fit(X_train, y_train)
+
+# Predict on the test set
+y_pred = rf_model.predict(X_test)
+
+# Evaluate the model
+mae = mean_absolute_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+
+print("Model Evaluation Metrics:")
+print(f"Mean Absolute Error (MAE): {mae:.2f}")
+print(f"R² Score: {r2:.2f}")
+
+
+df['predicted_aqi'] = rf_model.predict(scaler.transform(X))
+
+# Define a function to assign AQI bucket based on the AQI value
+def assign_aqi_bucket(aqi_value):
+    if aqi_value <= 50:
+        return 'Good'
+    elif aqi_value <= 100:
+        return 'Moderate'
+    elif aqi_value <= 150:
+        return 'Unhealthy for Sensitive Groups'
+    elif aqi_value <= 200:
+        return 'Unhealthy'
+    elif aqi_value <= 300:
+        return 'Very Unhealthy'
+    else:
+        return 'Hazardous'
+
+# Apply the bucket assignment function
+df['predicted_aqi_bucket'] = df['predicted_aqi'].apply(assign_aqi_bucket)

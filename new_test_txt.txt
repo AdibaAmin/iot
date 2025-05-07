@@ -1,0 +1,162 @@
+import pandas as pd
+import joblib
+import numpy as np
+
+# -------------------------------
+# 1. Load the New Test Dataset
+# -------------------------------
+# Update the path to your new test dataset
+test_df = pd.read_csv("E:/4.2/IOT LAb/data/sensor_data.csv")
+
+print("Test DataFrame shape:", test_df.shape)
+
+# -------------------------------
+# 2. Load the Previously Trained Model
+# -------------------------------
+rf_model = joblib.load("E:/4.2/IOT LAb/train code/rf_model.pkl")
+print("Loaded trained model.")
+
+# -------------------------------
+# 3. Define the Feature Columns Used During Training
+# -------------------------------
+features = ['PM2.5', 'PM10', 'NO2', 'NOx', 'NH3', 'CO', 'SO2', 'O3', 'Benzene', 'Toluene', 'Xylene']
+
+# -------------------------------
+# 4. Ensure All Required Features Are Present in the Test Data
+# -------------------------------
+for col in features:
+    if col not in test_df.columns:
+        print(f"Warning: Column {col} is missing in test data. Filling with 0.")
+        test_df[col] = 0  # Assigning default value 0 to missing columns
+
+# -------------------------------
+# 5. Handle Missing Values in Test Data
+# -------------------------------
+for col in features:
+    test_df[col].fillna(test_df[col].mean(), inplace=True)
+
+# -------------------------------
+# 6. Extract Features and Maintain Correct Order
+# -------------------------------
+X_test_new = test_df[features]  # Ensure correct column order
+
+# -------------------------------
+# 7. Predict AQI on the Test Data
+# -------------------------------
+test_df['predicted_aqi'] = rf_model.predict(X_test_new)
+
+# -------------------------------
+# 8. Define a Function to Assign AQI Buckets
+# -------------------------------
+def assign_aqi_bucket(aqi_value):
+    if aqi_value <= 50:
+        return 'Good'
+    elif aqi_value <= 100:
+        return 'Moderate'
+    elif aqi_value <= 150:
+        return 'Unhealthy for Sensitive Groups'
+    elif aqi_value <= 200:
+        return 'Unhealthy'
+    elif aqi_value <= 300:
+        return 'Very Unhealthy'
+    else:
+        return 'Hazardous'
+
+# -------------------------------
+# 9. Apply the Bucket Assignment Function
+# -------------------------------
+test_df['predicted_aqi_bucket'] = test_df['predicted_aqi'].apply(assign_aqi_bucket)
+
+# -------------------------------
+# 10. Display the Results
+# -------------------------------
+print(test_df[['predicted_aqi', 'predicted_aqi_bucket']])
+
+new_test = test_df.loc[:, (test_df != 0).any(axis=0)]
+new_test
+# -------------------------------
+# 11. Save the Predictions to a CSV File
+# -------------------------------
+new_test.to_csv("predicted_test_results.csv", index=False)
+print("Test predictions saved to 'predicted_test_results.csv'.")
+
+
+import pandas as pd
+import numpy as np
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
+# -------------------------------
+# 1. Load the Training Dataset
+# -------------------------------
+# Update the path to your training dataset
+train_df = pd.read_csv("E:/4.2/IOT LAb/train code/new_train.csv")
+print("Training DataFrame shape:", train_df.shape)
+
+# -------------------------------
+# 2. Ensure All Required Features Are Present in the Training Data
+# -------------------------------
+# (Using the same features list as before)
+train_df
+
+
+# Load the test predictions that contain the "predicted_aqi" column
+test_df = pd.read_csv("E:/4.2/IOT LAb/train code/predicted_test_results.csv")
+
+test_df
+
+# -------------------------------
+# 2. Compare the Actual AQI and Predicted AQI
+# -------------------------------
+# Assuming that both DataFrames are aligned (i.e. same order and number of rows)
+actual = train_df['predicted_aqi']
+predicted = test_df['predicted_aqi']
+
+actual
+
+predicted
+
+import numpy as np
+
+actual = np.array(train_df['predicted_aqi'])
+predicted = np.array(test_df['predicted_aqi'])
+
+import pandas as pd
+import numpy as np
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
+# Regression Metrics
+mae = mean_absolute_error(actual, predicted)
+mse = mean_squared_error(actual, predicted)
+rmse = np.sqrt(mse)
+r2 = r2_score(actual, predicted)
+gap_rate = np.mean(np.abs(predicted - actual) / actual) * 100
+
+print("Mean Absolute Error (MAE):", mae)
+print("Mean Squared Error (MSE):", mse)
+print("Root Mean Squared Error (RMSE):", rmse)
+print("R-squared (R²):", r2)
+print("Average Gap Rate: {:.2f}%".format(gap_rate))
+
+# -------------------------------
+# 3. Compare AQI Buckets
+# -------------------------------
+def assign_aqi_bucket(aqi_value):
+    if aqi_value <= 50:
+        return 'Good'
+    elif aqi_value <= 100:
+        return 'Moderate'
+    elif aqi_value <= 150:
+        return 'Unhealthy for Sensitive Groups'
+    elif aqi_value <= 200:
+        return 'Unhealthy'
+    elif aqi_value <= 300:
+        return 'Very Unhealthy'
+    else:
+        return 'Hazardous'
+
+# Apply bucket assignment on both actual and predicted values
+train_df['actual_aqi_bucket'] = train_df['actual_aqi'].apply(assign_aqi_bucket)
+test_df['predicted_aqi_bucket'] = test_df['predicted_aqi'].apply(assign_aqi_bucket)
+
+bucket_accuracy = np.mean(train_df['actual_aqi_bucket'] == test_df['predicted_aqi_bucket']) * 100
+print("AQI Bucket Accuracy: {:.2f}%".format(bucket_accuracy))
